@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vicinity - Intelligence Portal</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Nunito:wght@700;800;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            green: '#1A3C34', // Deep forest green
+                            'green-light': '#2b5f54',
+                            amber: '#F0A500', // Warm amber
+                            'dark-bg': '#0B0E14', // Extreme dark slate
+                            'dark-panel': '#151C25', // Slight contrast panel
+                            'dark-border': '#25303D',
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['"Orbitron"', 'sans-serif'],
+                        sans: ['"IBM Plex Sans"', 'sans-serif'],
+                        bubbly: ['"Nunito"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="styles.css?v=6">
+    <style>
+        @keyframes panSidebarBg {
+            0% { background-position: 0 0; }
+            100% { background-position: -40px -40px; }
+        }
+        @keyframes bg-pan {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        .animate-sidebar-pan {
+            animation: panSidebarBg 15s linear infinite;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-brand-dark-bg text-gray-300 font-sans h-screen flex overflow-hidden selection:bg-brand-amber selection:text-brand-dark-bg">
+
+    <!-- Authentication Overlay -->
+    <div id="auth-overlay" class="absolute inset-0 bg-brand-dark-bg z-50 flex flex-col items-center justify-center">
+        <!-- Background graphics -->
+        <div
+            class="absolute inset-0 opacity-[0.03] flex items-center justify-center overflow-hidden pointer-events-none">
+            <i class="fa-solid fa-earth-americas text-[40rem] text-brand-green"></i>
+        </div>
+
+        <div
+            class="relative w-full max-w-md p-8 glass-dark rounded-2xl shadow-2xl border border-white/5 animate-fade-in mx-4 z-10 backdrop-blur-xl bg-brand-dark-panel/80">
+            <div class="text-center mb-6">
+                <h1
+                    class="text-5xl font-bubbly font-black text-brand-amber mb-2 flex items-center justify-center gap-3 tracking-wide drop-shadow-lg">
+                    <i class="fa-solid fa-hands-holding-circle text-brand-green"></i> Vicinity
+                </h1>
+                <p class="text-gray-400 text-sm font-medium tracking-widest uppercase mt-2">Core Command Center</p>
+            </div>
+
+            <!-- Auth Mode Toggle -->
+            <div class="flex border-b border-brand-dark-border mb-6">
+                <button type="button" id="tab-login" onclick="window.app.toggleAuthMode('login')" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-brand-amber border-b-2 border-brand-amber transition-colors">Login</button>
+                <button type="button" id="tab-signup" onclick="window.app.toggleAuthMode('signup')" class="flex-1 py-3 text-xs font-bold uppercase tracking-widest text-gray-500 border-b-2 border-transparent hover:text-gray-300 transition-colors">Register</button>
+            </div>
+
+            <form id="login-form" class="space-y-5" onsubmit="event.preventDefault(); window.app.loginWithFirebase();">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Officer Identity (Email)</label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-user-shield absolute left-3.5 top-3.5 text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                        <input type="email" id="login-email" value="officer@vicinity.org" class="w-full bg-brand-dark-bg/50 border border-brand-dark-border rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-brand-amber focus:ring-1 focus:ring-brand-amber focus:bg-brand-dark-panel transition-all shadow-inner" required />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Secure Passkey</label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-key absolute left-3.5 top-3.5 text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                        <input type="password" id="login-password" placeholder="••••••••" class="w-full bg-brand-dark-bg/50 border border-brand-dark-border rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-brand-amber focus:ring-1 focus:ring-brand-amber focus:bg-brand-dark-panel transition-all shadow-inner" required />
+                    </div>
+                </div>
+
+                <div id="login-error" class="hidden text-red-500 text-xs font-bold bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center flex items-center justify-center gap-2 tracking-wide uppercase">
+                    <i class="fa-solid fa-circle-exclamation"></i> <span id="login-error-msg">Invalid clearance parameters.</span>
+                </div>
+
+                <button type="submit" id="login-btn" class="w-full bg-brand-green hover:bg-brand-amber text-white font-semibold tracking-wide py-3.5 rounded-xl mt-6 transition-all duration-300 shadow-[0_4px_14px_0_rgba(26,60,52,0.39)] hover:shadow-[0_4px_14px_0_rgba(240,165,0,0.39)] hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                    Authenticate Session <i class="fa-solid fa-fingerprint ml-1"></i>
+                </button>
+            </form>
+
+            <form id="signup-form" class="space-y-4 hidden" onsubmit="event.preventDefault(); window.app.registerWithFirebase();">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Full Name</label>
+                    <div class="relative group">
+                        <i class="fa-regular fa-id-badge absolute left-3.5 top-3.5 text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                        <input type="text" id="signup-name" placeholder="Cmdr. First Last" class="w-full bg-brand-dark-bg/50 border border-brand-dark-border rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-brand-amber focus:ring-1 focus:ring-brand-amber transition-all shadow-inner" required />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Officer Identity (Email)</label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-envelope absolute left-3.5 top-3.5 text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                        <input type="email" id="signup-email" placeholder="email@vicinity.org" class="w-full bg-brand-dark-bg/50 border border-brand-dark-border rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-brand-amber focus:ring-1 focus:ring-brand-amber transition-all shadow-inner" required />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Secure Passkey</label>
+                    <div class="relative group">
+                        <i class="fa-solid fa-key absolute left-3.5 top-3.5 text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                        <input type="password" id="signup-password" placeholder="••••••••" class="w-full bg-brand-dark-bg/50 border border-brand-dark-border rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:border-brand-amber focus:ring-1 focus:ring-brand-amber transition-all shadow-inner" required />
+                    </div>
+                </div>
+
+                <div id="signup-error" class="hidden text-red-500 text-xs font-bold bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center flex items-center justify-center gap-2 tracking-wide uppercase">
+                    <i class="fa-solid fa-circle-exclamation"></i> <span id="signup-error-msg">Registration error.</span>
+                </div>
+
+                <button type="submit" id="signup-btn" class="w-full bg-brand-dark-bg border border-brand-amber hover:bg-brand-amber text-brand-amber hover:text-brand-dark-bg font-semibold tracking-wide py-3.5 rounded-xl mt-6 transition-all duration-300 shadow-[0_4px_14px_0_rgba(240,165,0,0.1)] hover:shadow-[0_4px_14px_0_rgba(240,165,0,0.4)] hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                    Create Operative Profile <i class="fa-solid fa-user-plus ml-1"></i>
+                </button>
+            </form>
+        </div>
+        <div class="absolute bottom-8 text-gray-600 text-xs tracking-widest uppercase font-semibold">
+            SECURE CONNECTION · AES-256
+        </div>
+    </div>
+
+    <!-- Main Shell (Hidden Initially) -->
+    <div id="main-app" class="flex flex-col md:flex-row h-full w-full hidden opacity-0 transition-opacity duration-700">
+
+        <!-- Sidebar Navigation -->
+        <aside
+            class="w-64 border-r border-brand-dark-border flex flex-col h-full shadow-[5px_0_30px_rgba(0,0,0,0.5)] z-20 shrink-0 relative overflow-hidden group/sidebar bg-[#080B10]">
+            <!-- Extremely visible amber tactical grid -->
+            <div class="absolute inset-0 bg-[linear-gradient(rgba(240,165,0,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(240,165,0,0.1)_1px,transparent_1px)] bg-[size:30px_30px] animate-sidebar-pan pointer-events-none z-0 opacity-100"></div>
+            <!-- Large glowing amber orb -->
+            <div class="absolute top-10 -left-10 w-64 h-64 bg-brand-amber/30 rounded-full blur-[60px] animate-pulse pointer-events-none z-0 mix-blend-screen"></div>
+            <!-- Slight darkening at the very bottom so text is readable -->
+            <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-brand-dark-bg to-transparent z-0 pointer-events-none"></div>
+            
+            <div class="relative z-10 flex flex-col h-full w-full">
+                <div class="p-6 border-b border-brand-dark-border">
+                    <h1 class="text-3xl font-bubbly font-black tracking-wide flex items-center gap-3 text-white">
+                        <i class="fa-solid fa-hands-holding-circle text-brand-amber"></i> Vicinity
+                    </h1>
+                    <p class="text-brand-green-light text-xs font-semibold tracking-widest mt-1 uppercase">Field Operations
+                    </p>
+                </div>
+
+                <div class="px-6 py-4 border-b border-brand-dark-border flex flex-col gap-1 text-sm bg-brand-dark-bg/30">
+                    <div class="text-gray-400 text-xs">LOGGED IN AS</div>
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-8 h-8 rounded-full bg-brand-green text-brand-amber flex items-center justify-center font-bold text-sm shadow-inner shadow-black/50 border border-brand-amber/30">
+                            OF
+                        </div>
+                        <div>
+                            <div class="text-white font-medium grid-text">Cmdr. Officer</div>
+                            <div class="text-brand-amber text-[10px] uppercase font-bold tracking-wider">Clearance Lvl 5
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto" id="sidebar-nav">
+                    <a href="#" data-view="dashboard"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group">
+                        <i
+                            class="fa-solid fa-chart-pie w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">Command OS</span>
+                    </a>
+                    <a href="#" data-view="needs"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group">
+                        <i
+                            class="fa-solid fa-bullhorn w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">Intelligence Base</span>
+                    </a>
+                    <a href="#" data-view="volunteers"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group">
+                        <i
+                            class="fa-solid fa-users-viewfinder w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">Personnel Registry</span>
+                    </a>
+                    <a href="#" data-view="fusion"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group">
+                        <i
+                            class="fa-solid fa-cloud-arrow-down w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">NGO Data Fusion</span>
+                    </a>
+                    <a href="#" data-view="match"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group">
+                        <i
+                            class="fa-solid fa-microchip w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">Smart Allocation</span>
+                    </a>
+                    <a href="#" data-view="tasks"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group">
+                        <i
+                            class="fa-solid fa-list-check w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">Active Ops Tracker</span>
+                    </a>
+                    
+                    <a href="#" data-view="comms"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group relative">
+                        <i
+                            class="fa-solid fa-comment-dots w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">Secure Comms</span>
+                        <span class="absolute top-2 right-4 w-2 h-2 bg-brand-green-light rounded-full"></span>
+                    </a>
+
+                    <a href="#" data-view="reports"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group">
+                        <i
+                            class="fa-solid fa-chart-line w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">Data Insight</span>
+                    </a>
+                    <a href="#" data-view="logistics"
+                        class="nav-link flex items-center gap-3 px-4 py-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-300 transform hover:scale-105 hover:translate-x-2 group">
+                        <i
+                            class="fa-solid fa-boxes-stacked w-5 text-gray-500 group-hover:text-brand-amber transition-colors duration-300"></i>
+                        <span class="font-medium group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] transition-all duration-300">Logistics Forecast</span>
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-brand-dark-border bg-brand-dark-bg/50 mt-auto">
+                    <button onclick="window.app.handleLogout()"
+                        class="flex items-center gap-3 px-4 py-2.5 w-full rounded-xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all font-medium text-left">
+                        <i class="fa-solid fa-arrow-right-from-bracket w-5"></i> Terminate Session
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Dynamic Content Area -->
+        <main class="flex-1 flex flex-col h-full bg-brand-dark-bg relative overflow-y-auto overflow-x-hidden min-w-0">
+            <!-- Header -->
+            <header
+                class="h-20 bg-brand-dark-panel/80 backdrop-blur-lg border-b border-brand-dark-border flex items-center justify-between px-8 z-10 sticky top-0 shadow-sm">
+                <div>
+                    <h2 id="page-title" class="text-2xl font-heading text-white tracking-wide">Command OS</h2>
+                    <div id="clock-display"
+                        class="text-brand-amber text-xs font-mono font-medium tracking-widest mt-0.5 flex flex-row gap-2">
+                        <span>SYS_TIME: <span id="time-val">00:00:00</span></span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 relative">
+                    <button id="notification-btn"
+                        class="relative p-2.5 text-gray-400 bg-brand-dark-bg rounded-xl border border-brand-dark-border hover:text-white hover:border-brand-amber transition-colors">
+                        <i class="fa-regular fa-bell text-lg"></i>
+                        <div id="notification-indicator" class="hidden">
+                            <span
+                                class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full animate-pulse blur-[1px]"></span>
+                            <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </div>
+                    </button>
+                    <!-- Notification Dropdown -->
+                    <div id="notification-dropdown" class="hidden absolute top-full right-12 mt-2 w-80 bg-brand-dark-panel border border-brand-dark-border rounded-xl shadow-2xl z-[100] flex-col overflow-hidden">
+                        <div class="px-4 py-3 border-b border-brand-dark-border bg-[#080B10] flex justify-between items-center">
+                            <span class="text-xs font-bold text-gray-300 uppercase tracking-widest"><i class="fa-solid fa-satellite-dish text-brand-amber mr-1"></i> System Alerts</span>
+                            <button id="clear-notifications" class="text-[9px] text-gray-500 hover:text-white uppercase tracking-widest transition-colors">Clear</button>
+                        </div>
+                        <div id="notification-list" class="max-h-72 overflow-y-auto bg-brand-dark-bg/50">
+                            <!-- Injected by JS -->
+                            <div class="p-4 text-center text-gray-500 text-xs font-mono">No active alerts.</div>
+                        </div>
+                    </div>
+
+                    <button
+                        class="p-2.5 text-gray-400 bg-brand-dark-bg rounded-xl border border-brand-dark-border hover:text-white hover:border-brand-amber transition-colors">
+                        <i class="fa-solid fa-gear text-lg"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div id="views-container" class="flex-1 p-6 sm:p-8 space-y-6">
+                <!-- Views injected here by app.js -->
+            </div>
+
+            <footer class="text-center p-4 border-t border-brand-dark-border mt-auto">
+                <p class="text-gray-600 text-xs font-medium tracking-wide">Vicinity Terminal Interface &copy; 2026.
+                    Secure Enclave.</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- Core Modules -->
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/sandbox.js"></script>
+    <!-- Legacy/Global Scripts -->
+    <script src="js/dashboard.js?v=12"></script>
+    <script src="js/needs.js?v=12"></script>
+    <script src="js/volunteers.js?v=12"></script>
+    <script src="js/match.js?v=12"></script>
+    <script src="js/tasks.js?v=12"></script>
+    <script src="js/map.js?v=12"></script>
+    <script src="js/reports.js?v=12"></script>
+    <script src="js/logistics.js?v=13"></script>
+    <script src="js/fusion.js?v=13"></script>
+    <script src="js/comms.js?v=13"></script>
+    <script src="js/notifications.js?v=13"></script>
+    <script type="module" src="app.js?v=13"></script>
+</body>
+
+</html>

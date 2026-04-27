@@ -1,0 +1,163 @@
+{
+  "needs": [
+    {
+      "category": "Food/Water",
+      "subCategory": "Field Request",
+      "location": "LAT 12.9342, LNG 77.7559 (±63m)",
+      "urgency": "High",
+      "urgencyLevel": "High",
+      "description": "Requester: jiji (2322). 3 Food Rations. 10L Water. ",
+      "source": "Web Portal",
+      "lat": 12.9342,
+      "lng": 77.7559,
+      "id": "N-3980",
+      "status": "Resolved",
+      "timestamp": "2026-03-19T16:45:39.216Z",
+      "urgencyScore": 75,
+      "assignedTo": "FKvO80gLX1QqYoqVv7aGUp9djDT2"
+    },
+    {
+      "category": "Food/Water",
+      "subCategory": "Field Request",
+      "location": "LAT 12.9343, LNG 77.7559 (±75m)",
+      "urgency": "High",
+      "urgencyLevel": "High",
+      "description": "Requester: test5 (2313). 5 Food Rations. 5L Water. ",
+      "source": "Web Portal",
+      "lat": 12.9343,
+      "lng": 77.7559,
+      "id": "N-4807",
+      "status": "Resolved",
+      "timestamp": "2026-03-19T17:01:21.717Z",
+      "urgencyScore": 75,
+      "assignedTo": "FKvO80gLX1QqYoqVv7aGUp9djDT2"
+    },
+    {
+      "category": "Food/Water",
+      "subCategory": "Field Request",
+      "location": "LAT 12.9344, LNG 77.7555 (±75m)",
+      "urgency": "High",
+      "urgencyLevel": "High",
+      "description": "Requester: raul (123123). 1 Food Rations. ",
+      "source": "Web Portal",
+      "lat": 12.9344,
+      "lng": 77.7555,
+      "id": "N-4550",
+      "status": "In Progress",
+      "timestamp": "2026-03-19T18:08:22.863Z",
+      "urgencyScore": 75,
+      "assignedTo": "FKvO80gLX1QqYoqVv7aGUp9djDT2"
+    },
+    {
+      "category": "Food/Water",
+      "subCategory": "Field Request",
+      "location": "LAT 12.9343, LNG 77.7554 (±98m)",
+      "urgency": "High",
+      "urgencyLevel": "High",
+      "description": "Requester: test6 (324). 1 Food Rations. 5L Water. ",
+      "source": "Web Portal",
+      "lat": 12.9343,
+      "lng": 77.7554,
+      "id": "N-9607",
+      "status": "In Progress",
+      "timestamp": "2026-03-19T18:20:17.578Z",
+      "urgencyScore": 75,
+      "assignedTo": "qWdGPpCra3bB0MEu5h5iFgFOqUj2"
+    },
+    {
+      "category": "Food/Water",
+      "subCategory": "Field Request",
+      "location": "LAT 12.9342, LNG 77.7562 (±36m)",
+      "urgency": "Critical",
+      "urgencyLevel": "Critical",
+      "description": "Requester: fifi (3123). 2 Food Rations. 15L Water. ",
+      "source": "Web Portal",
+      "lat": 12.9342,
+      "lng": 77.7562,
+      "id": "N-5223",
+      "status": "Pending",
+      "timestamp": "2026-03-19T18:45:08.650Z",
+      "urgencyScore": 95
+    }
+  ],
+  "volunteers": [
+    {
+      "id": "FKvO80gLX1QqYoqVv7aGUp9djDT2",
+      "name": "joe",
+      "email": "2006fahad007@gmail.com",
+      "skills": [
+        "Medical",
+        "Rescue",
+        "Logistics",
+        "Engineering",
+        "General Support"
+      ],
+      "vehicles": [
+        "Standard",
+        "Off-Road 4x4",
+        "Heavy Truck",
+        "Aerial"
+      ],
+      "location": "Zone 5 (West Shore)",
+      "status": "Active",
+      "active": true,
+      "rating": 100
+    },
+    {
+      "id": "cXUY1iTxYIRYZgIhIPFynyPQ3OF3",
+      "name": "joeee",
+      "email": "25ug1bycs0527@bmsit.in",
+      "skills": [
+        "Medical",
+        "Rescue",
+        "Logistics",
+        "Engineering",
+        "General Support",
+        "Communications"
+      ],
+      "vehicles": [
+        "Standard",
+        "Off-Road 4x4",
+        "Heavy Truck",
+        "Motorcycle"
+      ],
+      "location": "Zone 6 (Industrial)",
+      "status": "Active",
+      "active": true,
+      "rating": 100
+    },
+    {
+      "id": "CU0CvnQkE8ZEVu8DxqIgkG5m4Uq2",
+      "name": "joe",
+      "email": "tamizzarina@gmail.com",
+      "skills": [
+        "Medical",
+        "Rescue",
+        "Logistics",
+        "General Support"
+      ],
+      "vehicles": [
+        "Standard",
+        "Off-Road 4x4",
+        "Heavy Truck",
+        "Aquatic"
+      ],
+      "location": "Zone 6 (Industrial)",
+      "status": "Active",
+      "active": true,
+      "rating": 100
+    }
+  ],
+  "users": [
+    {
+      "email": "admin@vicinity.org",
+      "role": "admin",
+      "name": "Cmdr. System"
+    },
+    {
+      "email": "officer@vicinity.org",
+      "role": "admin",
+      "name": "Cmdr. Officer"
+    }
+  ]
+}

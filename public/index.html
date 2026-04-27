@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vicinity - Uniting Communities</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            green: '#1A3C34',
+                            'green-light': '#2b5f54',
+                            amber: '#F0A500',
+                            'dark-bg': '#0B0E14',
+                            'dark-panel': '#151C25',
+                            'dark-border': '#25303D',
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['"Outfit"', 'sans-serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        bubbly: ['"Outfit"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0B0E14; color: #D1D5DB; }
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(21, 28, 37, 0.7) 0%, rgba(11, 14, 20, 0.4) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+        .portal-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .portal-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: #F0A500;
+            box-shadow: 0 10px 40px -10px rgba(240, 165, 0, 0.3);
+        }
+        .portal-card:active {
+            transform: scale(0.97);
+            box-shadow: 0 5px 20px -5px rgba(240, 165, 0, 0.2);
+        }
+        .portal-icon {
+            transition: transform 0.5s ease;
+        }
+        .portal-card:hover .portal-icon {
+            transform: scale(1.1) rotate(5deg);
+            color: #F0A500;
+        }
+        
+        /* Scroll Reveal Utility Classes */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Glowing overlay */
+        .bg-glow-core {
+            background: radial-gradient(circle, rgba(26,60,52,0.3) 0%, rgba(11,14,20,0) 70%);
+        }
+        
+        /* Floating animations for ambient orbs */
+        @keyframes sway {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(30px, -50px); }
+            66% { transform: translate(-20px, 40px); }
+        }
+        .animate-sway {
+            animation: sway 15s ease-in-out infinite;
+        }
+        
+        .navbar-scrolled {
+            background: rgba(11, 14, 20, 0.9);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(37, 48, 61, 0.8);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body class="font-sans selection:bg-brand-amber selection:text-brand-dark-bg relative overflow-x-hidden">
+
+    <!-- Global Background Elements -->
+    <div class="fixed inset-0 z-[-5] bg-brand-dark-bg pointer-events-none"></div>
+    
+    <!-- Ambient Aurora Glows -->
+    <div class="fixed top-[-10%] left-[-10%] w-[600px] h-[600px] bg-brand-green/20 blur-[150px] rounded-full mix-blend-screen pointer-events-none animate-sway z-[-4]"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[700px] h-[700px] bg-brand-amber/10 blur-[150px] rounded-full mix-blend-screen pointer-events-none animate-sway z-[-4]" style="animation-delay: -5s;"></div>
+    <div class="fixed top-[30%] left-[50%] w-[500px] h-[500px] bg-blue-900/20 blur-[150px] rounded-full mix-blend-screen pointer-events-none animate-sway z-[-4]" style="animation-delay: -10s;"></div>
+
+    <!-- 3D Tactical Perspective Grid -->
+    <div id="tactical-grid" class="fixed bottom-[-50vh] left-[-50vw] w-[200vw] h-[150vh] z-[-3] pointer-events-none opacity-30 will-change-transform" style="background-image: linear-gradient(rgba(43,95,84, 0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(43,95,84, 0.4) 1px, transparent 1px); background-size: 80px 80px; transform: perspective(800px) rotateX(70deg) translateY(0); transform-origin: top center;">
+        <!-- Horizon fade out -->
+        <div class="absolute inset-0 bg-gradient-to-b from-brand-dark-bg via-transparent to-brand-dark-bg"></div>
+    </div>
+
+    <!-- Top glow -->
+    <div class="fixed top-[-20%] left-1/4 w-1/2 h-[700px] bg-glow-core blur-[100px] rounded-full pointer-events-none z-[-2]"></div>
+
+    <!-- Parallax Tech Elements (HUD style) -->
+    <div class="fixed inset-0 pointer-events-none z-[-2] overflow-hidden" id="parallax-container">
+        <!-- Floating Crosshairs -->
+        <div class="absolute top-[15%] left-[10%] text-brand-green-light/40 text-sm font-mono parallax-item" data-speed="-0.2"><i class="fa-solid fa-crosshairs rotate-45"></i></div>
+        <div class="absolute top-[60%] right-[15%] text-brand-amber/30 text-xs font-mono parallax-item" data-speed="-0.5"><i class="fa-solid fa-crosshairs"></i></div>
+        <div class="absolute bottom-[20%] left-[8%] text-blue-500/20 text-lg font-mono parallax-item" data-speed="0.1"><i class="fa-solid fa-expand"></i></div>
+        <div class="absolute top-[80%] left-[45%] text-gray-500/30 text-[10px] font-mono parallax-item" data-speed="-0.3">+</div>
+        
+        <!-- Mock Data Nodes -->
+        <div class="absolute top-[35%] right-[20%] text-brand-green/50 text-[10px] sm:text-xs font-mono tracking-widest parallax-item leading-relaxed" data-speed="0.4">
+            <span class="text-white/40">SYS.NODE_Alpha</span><br>
+            LAT: 12.9716<br>
+            LNG: 77.5946
+        </div>
+        <div class="absolute top-[75%] left-[25%] text-brand-amber/40 text-[10px] sm:text-xs font-mono tracking-widest parallax-item leading-relaxed" data-speed="0.2">
+            <span class="text-white/40">TGT_LOCKED</span><br>
+            SPD: 0.00kts<br>
+            ALT: 890m
+        </div>
+        <div class="absolute bottom-[40%] right-[8%] text-blue-400/40 text-[10px] sm:text-xs font-mono tracking-widest parallax-item leading-relaxed" data-speed="-0.1">
+            <span class="text-white/40">UPLINK_STABLE</span><br>
+            SEC: AES-256
+        </div>
+
+        <!-- Radar Rings -->
+        <div class="absolute top-[50%] left-[50%] w-[600px] h-[600px] -ml-[300px] -mt-[300px] border border-brand-green/5 rounded-full parallax-item" data-speed="-0.05"></div>
+        <div class="absolute top-[50%] left-[50%] w-[1000px] h-[1000px] -ml-[500px] -mt-[500px] border border-brand-amber/5 rounded-full parallax-item border-dashed" data-speed="0.1"></div>
+    </div>
+    
+    <!-- Navbar -->
+    <nav id="navbar" class="fixed w-full z-50 transition-all duration-300 py-4 px-6 md:px-12 border-b border-transparent">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="#" class="text-2xl font-bubbly font-black tracking-wide text-white flex items-center gap-2 group">
+                <i class="fa-solid fa-hands-holding-circle text-brand-green-light group-hover:text-brand-amber transition-colors"></i> Vicinity
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-semibold tracking-widest uppercase text-gray-400">
+                <a href="#hero" class="hover:text-white transition-colors">Home</a>
+                <a href="#mission" class="hover:text-brand-amber transition-colors">Mission</a>
+                <a href="#features" class="hover:text-brand-green-light transition-colors">Features</a>
+                <a href="#portals" class="hover:text-blue-400 transition-colors">Portals</a>
+            </div>
+            <div>
+                <a href="operator.html" class="bg-brand-dark-panel border border-brand-dark-border text-brand-amber px-5 py-2.5 rounded-xl font-bold tracking-wide uppercase text-xs hover:bg-brand-amber hover:text-brand-dark-bg transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg inline-block">
+                    Login
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="relative min-h-screen flex items-center justify-center pt-20 pb-12 px-6 overflow-hidden">
+        <!-- Floating shapes -->
+        <div class="absolute top-1/4 right-1/4 text-brand-green-light/10 text-9xl animate-float pointer-events-none"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="absolute bottom-1/4 left-1/4 text-brand-amber/5 text-9xl animate-float pointer-events-none" style="animation-delay: 2s"><i class="fa-solid fa-satellite-dish"></i></div>
+        
+        <!-- NEW LOGOS: Disaster Management & Resource Allocation -->
+        <div class="absolute top-[15%] left-[10%] text-brand-green/20 text-7xl animate-float pointer-events-none" style="animation-delay: 1s"><i class="fa-solid fa-house-medical-flag"></i></div>
+        <div class="absolute bottom-[20%] right-[15%] text-brand-amber/10 text-8xl animate-float pointer-events-none" style="animation-delay: 3.5s"><i class="fa-solid fa-boxes-packing"></i></div>
+        
+        <div class="max-w-5xl w-full text-center relative z-10 reveal active">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-green/30 bg-brand-green/10 text-brand-green-light text-xs font-bold uppercase tracking-widest mb-8">
+                <span class="w-2 h-2 rounded-full bg-brand-green animate-pulse"></span>
+                System Online v2.4
+            </div>
+            
+            <h1 class="text-6xl md:text-8xl font-heading text-white mb-6 leading-tight drop-shadow-[0_0_25px_rgba(255,255,255,0.15)] min-h-[140px] md:min-h-[200px]">
+                <span id="type-part-1"></span><span id="type-cursor" class="animate-pulse font-mono text-brand-amber mix-blend-screen ml-1">_</span><br>
+                <span id="type-part-2" class="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-brand-amber via-yellow-200 to-yellow-400 drop-shadow-[0_0_15px_rgba(240,165,0,0.4)] opacity-0 transition-opacity duration-[2500ms] ease-in-out">
+                    Unified.
+                    <!-- Dynamic sparkle elements injected via JS -->
+                </span>
+            </h1>
+            
+            <p class="text-gray-300 text-lg md:text-xl font-medium max-w-2xl mx-auto mb-12 leading-relaxed drop-shadow-[0_0_15px_rgba(255,255,255,0.25)]">
+                Precision intelligence. Rapid deployment. Bridging the gap between active crises and real-time response to unite communities when every second counts.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="#portals" class="bg-brand-amber text-brand-dark-bg px-8 py-4 rounded-xl font-bold tracking-widest uppercase text-sm hover:bg-yellow-400 hover:shadow-[0_0_30px_rgba(240,165,0,0.5)] transform hover:-translate-y-1 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-3">
+                    Access Portals <i class="fa-solid fa-angle-down"></i>
+                </a>
+                <a href="#features" class="glass-panel text-white px-8 py-4 rounded-xl font-bold tracking-widest uppercase text-sm hover:bg-white/5 hover:border-gray-500 transform hover:scale-105 active:scale-95 transition-all duration-300 inline-block">
+                    How it Works
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission Statement Section -->
+    <section id="mission" class="py-20 px-6 relative z-10 mt-6">
+        <div class="max-w-5xl mx-auto">
+            <div class="glass-panel p-10 md:p-14 rounded-[2rem] relative overflow-hidden reveal shadow-[0_0_40px_rgba(26,60,52,0.2)]">
+                <!-- Decorative glow -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-brand-amber/10 blur-[80px] rounded-full pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-brand-green/20 blur-[80px] rounded-full pointer-events-none"></div>
+                
+                <div class="relative z-10 flex flex-col md:flex-row gap-10 items-center">
+                    <div class="shrink-0 text-brand-amber/80">
+                        <div class="w-24 h-24 rounded-2xl bg-brand-dark-bg/80 border border-brand-amber/30 flex items-center justify-center shadow-inner">
+                            <i class="fa-solid fa-triangle-exclamation text-5xl drop-shadow-[0_0_15px_rgba(240,165,0,0.5)]"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-brand-green-light text-sm font-bold tracking-[0.2em] uppercase mb-3">The Critical Gap</h2>
+                        <p class="text-gray-300 text-lg md:text-xl font-medium leading-relaxed drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                            <span class="text-white font-bold drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">Community needs data collected by NGOs and local groups is fragmented and poorly organized</span>, making it difficult to identify priority issues and efficiently allocate volunteers. 
+                        </p>
+                        <hr class="border-brand-dark-border/80 my-6">
+                        <p class="text-gray-400 text-md md:text-lg leading-relaxed">
+                            There is a critical need for a centralized, data-driven system that <span class="text-brand-amber font-semibold">consolidates this information</span> and intelligently <span class="text-brand-green-light font-semibold">matches volunteers</span> to the most urgent tasks and locations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 px-6 relative z-10 bg-brand-dark-bg/50 backdrop-blur-sm border-y border-brand-dark-border/50">
+        <style>
+            .feature-content {
+                max-height: 0;
+                opacity: 0;
+                transition: max-height 0.4s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
+            }
+            .feature-card.expanded .feature-content {
+                max-height: 200px;
+                opacity: 1;
+                padding-top: 1.5rem;
+            }
+            .feature-card.expanded .toggle-icon {
+                transform: rotate(45deg);
+                color: white;
+            }
+        </style>
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16 reveal">
+                <h2 class="text-brand-green-light text-sm font-bold tracking-[0.2em] uppercase mb-2">Core Capabilities</h2>
+                <h3 class="text-4xl font-heading text-white">Next-Generation Infrastructure</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Feature 1: AI Vision -->
+                <div class="feature-card glass-panel p-6 rounded-3xl reveal hover:border-brand-amber/50 transition-colors cursor-pointer group select-none" onclick="this.classList.toggle('expanded')">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 shrink-0 rounded-xl bg-brand-dark-bg border border-brand-dark-border flex items-center justify-center text-brand-amber text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-eye"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-0">Multimodal AI Recon</h4>
+                        <div class="ml-auto w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center text-gray-500 group-hover:border-gray-500 transition-colors">
+                            <i class="fa-solid fa-plus toggle-icon transition-transform duration-300"></i>
+                        </div>
+                    </div>
+                    <div class="feature-content overflow-hidden">
+                        <p class="text-sm text-gray-400 leading-relaxed border-t border-brand-dark-border/50 pt-4">Ground units can snap field photos. Our Gemini 2.5 Flash engine immediately acts as a combat engineer, extracting structural damage, casualties, and necessary logistics without typing a word.</p>
+                    </div>
+                </div>
+
+                <!-- Feature 2: AI Allocation -->
+                <div class="feature-card glass-panel p-6 rounded-3xl reveal hover:border-brand-green/50 transition-colors cursor-pointer group select-none" style="transition-delay: 100ms" onclick="this.classList.toggle('expanded')">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 shrink-0 rounded-xl bg-brand-dark-bg border border-brand-dark-border flex items-center justify-center text-brand-green-light text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-0">AI-Driven Allocation</h4>
+                        <div class="ml-auto w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center text-gray-500 group-hover:border-gray-500 transition-colors">
+                            <i class="fa-solid fa-plus toggle-icon transition-transform duration-300"></i>
+                        </div>
+                    </div>
+                    <div class="feature-content overflow-hidden">
+                        <p class="text-sm text-gray-400 leading-relaxed border-t border-brand-dark-border/50 pt-4">Smart priority scoring ensures critical scenarios get immediate attention. Resources flow where they're needed most, automatically routing response teams.</p>
+                    </div>
+                </div>
+                
+                <!-- Feature 3: Tactical Mapping -->
+                <div class="feature-card glass-panel p-6 rounded-3xl reveal hover:border-blue-500/50 transition-colors cursor-pointer group select-none" style="transition-delay: 200ms" onclick="this.classList.toggle('expanded')">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 shrink-0 rounded-xl bg-brand-dark-bg border border-brand-dark-border flex items-center justify-center text-blue-400 text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-0">Live Tactical Mapping</h4>
+                        <div class="ml-auto w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center text-gray-500 group-hover:border-gray-500 transition-colors">
+                            <i class="fa-solid fa-plus toggle-icon transition-transform duration-300"></i>
+                        </div>
+                    </div>
+                    <div class="feature-content overflow-hidden">
+                        <p class="text-sm text-gray-400 leading-relaxed border-t border-brand-dark-border/50 pt-4">Real-time geospatial rendering of all active operations and operatives. Make strategic Command OS decisions with absolute locational awareness.</p>
+                    </div>
+                </div>
+
+                <!-- Feature 4: Sandbox Simulator -->
+                <div class="feature-card glass-panel p-6 rounded-3xl reveal hover:border-purple-500/50 transition-colors cursor-pointer group select-none" style="transition-delay: 300ms" onclick="this.classList.toggle('expanded')">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 shrink-0 rounded-xl bg-brand-dark-bg border border-brand-dark-border flex items-center justify-center text-purple-400 text-2xl shadow-inner group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-flask"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-0">Disaster Sandbox Engine</h4>
+                        <div class="ml-auto w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center text-gray-500 group-hover:border-gray-500 transition-colors">
+                            <i class="fa-solid fa-plus toggle-icon transition-transform duration-300"></i>
+                        </div>
+                    </div>
+                    <div class="feature-content overflow-hidden">
+                        <p class="text-sm text-gray-400 leading-relaxed border-t border-brand-dark-border/50 pt-4">A dedicated algorithmic testing environment. Generate intense, highly-detailed crisis scenarios instantly to battle-test and train your response networks.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portals Section -->
+    <section id="portals" class="py-24 px-6 relative z-10">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16 reveal">
+                <h2 class="text-5xl font-bubbly font-black tracking-wide text-white drop-shadow-lg flex items-center justify-center gap-4">
+                    <i class="fa-solid fa-globe text-brand-green"></i> Access Network
+                </h2>
+                <p class="mt-4 text-brand-amber text-sm font-bold tracking-[0.2em] uppercase max-w-2xl mx-auto">
+                    Select your operational clearance
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Needy Card -->
+                <a href="request.html" class="portal-card glass-panel rounded-3xl p-8 flex flex-col items-center text-center group reveal">
+                    <div class="w-24 h-24 rounded-2xl bg-brand-dark-bg border border-brand-dark-border flex items-center justify-center mb-6 shadow-inner group-hover:border-brand-amber/50 transition-colors">
+                        <i class="fa-solid fa-hand-holding-heart text-5xl text-red-500 portal-icon"></i>
+                    </div>
+                    <h2 class="text-2xl font-heading text-white mb-3">Get Assistance</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6 flex-1">
+                        Are you in need of urgent help, medical supplies, food, or shelter? Submit a priority request to our response network instantly.
+                    </p>
+                    <span class="inline-flex items-center justify-center gap-2 bg-brand-dark-bg text-red-400 border border-red-500/30 px-6 py-3 rounded-xl font-bold tracking-wide uppercase text-xs w-full group-hover:bg-red-500/10 transition-colors">
+                        Request Aid <i class="fa-solid fa-arrow-right"></i>
+                    </span>
+                </a>
+
+                <!-- Volunteer Card -->
+                <a href="volunteer.html" class="portal-card glass-panel rounded-3xl p-8 flex flex-col items-center text-center group reveal" style="transition-delay: 150ms">
+                    <div class="w-24 h-24 rounded-2xl bg-brand-dark-bg border border-brand-dark-border flex items-center justify-center mb-6 shadow-inner group-hover:border-brand-amber/50 transition-colors">
+                        <i class="fa-solid fa-person-military-pointing text-5xl text-brand-green-light portal-icon"></i>
+                    </div>
+                    <h2 class="text-2xl font-heading text-white mb-3">Field Operative</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6 flex-1">
+                        Join the active roster of volunteers and field operatives. Access assigned tasks, perform resolutions, and provide vital intel.
+                    </p>
+                    <span class="inline-flex items-center justify-center gap-2 bg-brand-green text-white px-6 py-3 rounded-xl font-bold tracking-wide uppercase text-xs w-full group-hover:bg-brand-green-light shadow-[0_4px_15px_rgba(26,60,52,0.4)] transition-all">
+                        Access Portal <i class="fa-solid fa-arrow-right"></i>
+                    </span>
+                </a>
+
+                <!-- Operator Card -->
+                <a href="operator.html" class="portal-card glass-panel rounded-3xl p-8 flex flex-col items-center text-center group reveal" style="transition-delay: 300ms">
+                    <div class="w-24 h-24 rounded-2xl bg-brand-dark-bg border border-brand-dark-border flex items-center justify-center mb-6 shadow-inner group-hover:border-brand-amber/50 transition-colors">
+                        <i class="fa-solid fa-tower-broadcast text-5xl text-gray-500 group-hover:text-brand-amber portal-icon"></i>
+                    </div>
+                    <h2 class="text-2xl font-heading text-white mb-3">Command Center</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6 flex-1">
+                        Authorized dispatchers and command officers only. Monitor city-wide aid requests, manage operatives, and deploy resources.
+                    </p>
+                    <span class="inline-flex items-center justify-center gap-2 bg-brand-dark-bg text-brand-amber border border-brand-amber/50 px-6 py-3 rounded-xl font-bold tracking-wide uppercase text-xs w-full group-hover:bg-brand-amber/10 transition-colors">
+                        System Login <i class="fa-solid fa-arrow-right"></i>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-brand-dark-border bg-brand-dark-panel pb-8 pt-12">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div>
+                <h1 class="text-2xl font-bubbly font-black tracking-wide text-white mb-4">
+                    <i class="fa-solid fa-hands-holding-circle text-brand-green-light"></i> Vicinity
+                </h1>
+                <p class="text-xs text-gray-400 leading-relaxed font-medium">Building resilient networks to streamline community-level disaster and crisis management effectively and securely.</p>
+            </div>
+            <div>
+                <h4 class="text-sm font-bold text-white uppercase tracking-wider mb-4">Quick Links</h4>
+                <ul class="text-sm text-gray-500 space-y-2 font-medium">
+                    <li><a href="#hero" class="hover:text-brand-amber transition-colors">System Overview</a></li>
+                    <li><a href="#features" class="hover:text-brand-amber transition-colors">Infrastructure Specs</a></li>
+                    <li><a href="operator.html" class="hover:text-brand-amber transition-colors">Command Interface</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-sm font-bold text-white uppercase tracking-wider mb-4">Status</h4>
+                <div class="inline-flex items-center gap-2 bg-brand-dark-bg border border-brand-dark-border px-4 py-2 rounded-xl text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full bg-brand-green animate-pulse"></span> All Systems Operational
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-6 text-center border-t border-brand-dark-border/50 pt-8">
+            <p class="text-gray-600 text-xs font-bold tracking-widest uppercase">
+                Vicinity Platform &copy; 2026 &nbsp;&bull;&nbsp; Developed for Secure Operations
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scroll & Animation Script -->
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Navbar blur on scroll
+        const navbar = document.getElementById('navbar');
+        const tacticalGrid = document.getElementById('tactical-grid');
+        const parallaxItems = document.querySelectorAll('.parallax-item');
+        
+        window.addEventListener('scroll', () => {
+            const scroll = window.scrollY;
+            
+            // Dynamic 3D Grid Animation
+            if (tacticalGrid) {
+                // Creates a moving forward effect into the 3D plane
+                tacticalGrid.style.transform = `perspective(800px) rotateX(70deg) translateY(${scroll * 0.5}px)`;
+            }
+
+            // Parallax UI Elements
+            parallaxItems.forEach(item => {
+                const speed = parseFloat(item.getAttribute('data-speed'));
+                item.style.transform = `translateY(${scroll * speed}px)`;
+            });
+
+            if (scroll > 50) {
+                navbar.classList.add('navbar-scrolled');
+                navbar.classList.remove('py-4');
+                navbar.classList.add('py-2');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+                navbar.classList.remove('py-2');
+                navbar.classList.add('py-4');
+            }
+        });
+
+        // Scroll Reveal Animation Observer
+        function reveal() {
+            var reveals = document.querySelectorAll(".reveal");
+            for (var i = 0; i < reveals.length; i++) {
+                var windowHeight = window.innerHeight;
+                var elementTop = reveals[i].getBoundingClientRect().top;
+                var elementVisible = 100;
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add("active");
+                }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        // Trigger once on load
+        reveal();
+
+        // Typing & Sparkle Animation Sequence
+        document.addEventListener('DOMContentLoaded', () => {
+            const part1 = document.getElementById('type-part-1');
+            const part2 = document.getElementById('type-part-2');
+            const cursor = document.getElementById('type-cursor');
+            
+            const textToType = "Crisis Response,";
+            let index = 0;
+            
+            // Generate sparkle elements
+            const createSparkles = () => {
+                for(let i=0; i<36; i++) {
+                    const spark = document.createElement('div');
+                    spark.className = 'absolute w-1.5 h-1.5 bg-brand-amber rounded-full pointer-events-none animate-sparkle';
+                    
+                    // Random positions around the "Unified." text
+                    const left = Math.random() * 100;
+                    const top = Math.random() * 100;
+                    const delay = Math.random() * 1.5;
+                    
+                    spark.style.left = `${left}%`;
+                    spark.style.top = `${top}%`;
+                    spark.style.animationDelay = `${delay}s`;
+                    
+                    part2.appendChild(spark);
+                }
+            };
+            
+            const typeWriter = () => {
+                if (index < textToType.length) {
+                    part1.innerHTML += textToType.charAt(index);
+                    index++;
+                    setTimeout(typeWriter, 80 + Math.random() * 50); // Varied typing speed
+                } else {
+                    // Blob Morph Sequence
+                    setTimeout(() => {
+                        // 1. Morph cursor from text '_' to glowing sphere
+                        cursor.innerHTML = '';
+                        cursor.className = 'inline-block w-4 h-4 bg-brand-amber rounded-full ml-1 mb-2 shadow-[0_0_30px_rgba(240,165,0,1)] transition-all duration-300';
+                        
+                        // 2. Execute flight path
+                        setTimeout(() => {
+                            cursor.classList.add('animate-blob-fly');
+                            
+                            // Comet tail particle emitter
+                            const tailInterval = setInterval(() => {
+                                const rect = cursor.getBoundingClientRect();
+                                if(rect.width === 0) return; // Hidden
+                                const trail = document.createElement('div');
+                                trail.className = 'fixed w-2 h-2 bg-yellow-100 rounded-full z-40 pointer-events-none transition-all duration-[800ms] ease-out shadow-[0_0_15px_rgba(253,224,71,0.9)] mix-blend-screen';
+                                trail.style.left = `${rect.left + rect.width/2}px`;
+                                trail.style.top = `${rect.top + rect.height/2}px`;
+                                document.body.appendChild(trail);
+                                
+                                requestAnimationFrame(() => {
+                                    trail.style.transform = `translate(${Math.random() * 60 - 30}px, ${Math.random() * 80 - 20}px) scale(0)`;
+                                    trail.style.opacity = '0';
+                                });
+                                setTimeout(() => trail.remove(), 800);
+                            }, 10); // Ultimate particle frequency
+
+                            // 3. Ignite Core (Reveal Unified when blob flashes)
+                            setTimeout(() => {
+                                clearInterval(tailInterval);
+                                cursor.style.display = 'none';
+                                part2.classList.remove('opacity-0');
+                                part2.classList.add('opacity-100');
+                                createSparkles();
+                            }, 1300); // 1.3s (syncs with 1.4s explosion window starting at 90%)
+                        }, 400); // Wait 400ms in morphed state
+                    }, 400); // Wait 400ms after typing finished
+                }
+            };
+            
+            // Start sequence after a small delay
+            setTimeout(typeWriter, 500);
+        });
+    </script>
+    <style>
+        @keyframes blob-fly {
+            0%   { offset-distance: 0%; transform: scale(1); opacity: 1; filter: blur(0px); }
+            50%  { offset-distance: 50%; transform: scale(1.6); box-shadow: 0 0 60px rgba(240,165,0,1); }
+            90%  { offset-distance: 90%; transform: scale(6); opacity: 1; filter: blur(2px); }
+            100% { offset-distance: 100%; transform: scale(50); opacity: 0; filter: blur(35px); }
+        }
+        .animate-blob-fly {
+            offset-path: path("M 0 0 C 300 -200, 450 150, 150 250 C 0 350, -300 250, -250 80");
+            offset-rotate: 0deg;
+            animation: blob-fly 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            position: relative;
+            z-index: 50;
+        }
+
+        @keyframes sparkle-burst {
+            0% { transform: scale(0) translate(0, 0); opacity: 1; }
+            50% { opacity: 1; }
+            100% { 
+                transform: scale(2) translate(calc(-80px + 160px * var(--rx, 0.5)), calc(-80px + 160px * var(--ry, 0.5))); 
+                opacity: 0; 
+                box-shadow: 0 0 20px rgba(240,165,0,0.8);
+            }
+        }
+        .animate-sparkle {
+            --rx: random();
+            --ry: random();
+            animation: sparkle-burst 2.8s ease-out forwards;
+            box-shadow: 0 0 10px rgba(240,165,0,1);
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Firebase
+.firebase/
+.firebaserc
+
+# Environment secrets — NEVER commit these
+functions/.env
+.env
+*.env
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store

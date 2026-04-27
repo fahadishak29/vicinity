@@ -1,0 +1,224 @@
+/* Dark Aesthetic Custom CSS overrides */
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: dark;
+}
+
+/* Custom Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-critical {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseSlow {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.05); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-critical {
+    animation: pulse-critical 2s infinite;
+}
+
+.animate-pulse-slow {
+    animation: pulseSlow 8s ease-in-out infinite;
+}
+
+@keyframes dash-deploy {
+    to {
+        stroke-dashoffset: -100;
+    }
+}
+.anim-route-line {
+    animation: dash-deploy 5s linear infinite;
+}
+
+@keyframes spinRadar {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.radar-spin {
+    animation: spinRadar 3s linear infinite;
+}
+
+/* Glassmorphism helpers for Dark Theme */
+.glass-dark {
+    background: rgba(21, 28, 37, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Standard Panel styling to ensure dark borders and backgrounds apply cleanly */
+.dark-card {
+    background-color: #151C25; 
+    border: 1px solid #25303D; 
+    border-radius: 0.75rem; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+.dark-input {
+    background-color: rgba(11, 14, 20, 0.5);
+    border: 1px solid #25303D;
+    color: #e2e8f0;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.dark-input:hover {
+    border-color: rgba(240, 165, 0, 0.4);
+}
+.dark-input:focus {
+    border-color: #F0A500;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(240, 165, 0, 0.2);
+    outline: none;
+}
+
+.dark-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+.dark-select option {
+    background-color: #151C25;
+    color: #e2e8f0;
+}
+
+/* Grid Text effect */
+.grid-text {
+    line-height: 1.1;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+}
+
+/* Scrollbar Customization - Dark */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0B0E14;
+    border-left: 1px solid #25303D;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #25303D;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Navigation Active State - Dark */
+.nav-link.active {
+    background-color: rgba(26, 60, 52, 0.4); 
+    color: #F0A500;
+    border-left: 4px solid #F0A500;
+    border-radius: 0 0.75rem 0.75rem 0;
+    box-shadow: inset 20px 0 20px -20px rgba(240, 165, 0, 0.2);
+}
+
+/* Map specific styles */
+#dashboard-map, #community-map {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    z-index: 1;
+    border: 1px solid #25303D;
+}
+
+/* Dark mode overrides for Leaflet map popups */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: #151C25 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #25303D !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Hide OSRM Routing Instructions Panel */
+.leaflet-routing-container {
+    display: none !important;
+}
+
+/* Kanban Dark Theme */
+.kanban-column {
+    min-height: 400px;
+    background: rgba(11, 14, 20, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid #25303D;
+}
+.kanban-card {
+    cursor: grab;
+    background: #151C25;
+    border: 1px solid #334155;
+}
+.kanban-card:active {
+    cursor: grabbing;
+}
+.kanban-card.dragging {
+    opacity: 0.4;
+    transform: scale(1.02);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+    border-color: #F0A500;
+}
+.kanban-column.drag-over {
+    background-color: rgba(240, 165, 0, 0.05);
+    border: 2px dashed #F0A500;
+}
+
+/* Floating Particle glowing and random drift Setup */
+@keyframes float-drift-1 {
+    0% { transform: translate(0, 10vh) rotate(0deg); opacity: 0; }
+    15% { opacity: 0.25; }
+    50% { transform: translate(-40px, -50vh) rotate(120deg); opacity: 0.25; }
+    85% { opacity: 0.25; }
+    100% { transform: translate(30px, -110vh) rotate(240deg); opacity: 0; }
+}
+
+@keyframes float-drift-2 {
+    0% { transform: translate(0, 10vh) rotate(0deg); opacity: 0; }
+    15% { opacity: 0.25; }
+    40% { transform: translate(35px, -30vh) rotate(-45deg); opacity: 0.25; }
+    80% { transform: translate(-25px, -80vh) rotate(-130deg); opacity: 0.25; }
+    100% { transform: translate(10px, -110vh) rotate(-180deg); opacity: 0; }
+}
+
+.floating-icon {
+    position: absolute;
+    color: #F0A500;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+    bottom: -20%;
+    filter: drop-shadow(0 0 15px rgba(240, 165, 0, 0.7));
+}
+
+.delay-1 { animation: float-drift-1 25s ease-in-out infinite; animation-delay: 0s; }
+.delay-2 { animation: float-drift-2 28s ease-in-out infinite; animation-delay: -5s; left: 35%; }
+.delay-3 { animation: float-drift-1 32s ease-in-out infinite; animation-delay: -15s; left: 60%; }
+.delay-4 { animation: float-drift-2 24s ease-in-out infinite; animation-delay: -22s; left: 85%; }
+.delay-5 { animation: float-drift-1 29s ease-in-out infinite; animation-delay: -8s; left: 20%; transform: scale(0.8); }
+.delay-6 { animation: float-drift-2 35s ease-in-out infinite; animation-delay: -12s; left: 75%; transform: scale(1.2); }
+.delay-7 { animation: float-drift-1 26s ease-in-out infinite; animation-delay: -2s; left: 50%; transform: scale(0.9); }
+

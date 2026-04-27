@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vicinity - Operative Enrollment</title>
+    
+    <!-- Leaflet JS for Mapping -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            green: '#1A3C34',
+                            'green-light': '#2b5f54', 
+                            amber: '#F0A500', 
+                            'dark-bg': '#0B0E14', 
+                            'dark-panel': '#151C25', 
+                            'dark-border': '#25303D'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['"Outfit"', 'sans-serif'],
+                        sans: ['"Inter"', 'sans-serif'],
+                        bubbly: ['"Outfit"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <script src="js/utils.js?v=2"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/sandbox.js"></script>
+    <script type="module">
+            import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+            import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+            import { getFirestore, doc, setDoc, updateDoc, collection, onSnapshot, getDoc, increment } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyAvVEFO_GxfCC-FzrvfagEf9NoiAd1zR8w",
+                authDomain: "vicinity-8b34f.firebaseapp.com",
+                projectId: "vicinity-8b34f",
+                storageBucket: "vicinity-8b34f.firebasestorage.app",
+                messagingSenderId: "551409509601",
+                appId: "1:551409509601:web:432f2ff6567b037e23c3a0"
+            };
+
+            const appFirebase = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+            const auth = getAuth(appFirebase);
+            setPersistence(auth, browserSessionPersistence).catch(console.error);
+            const db = getFirestore(appFirebase);
+            window.db = db;
+            
+            let currentUser = null;
+
+            const loginForm = document.getElementById('login-form');
+            const authOverlay = document.getElementById('auth-overlay');
+            const dossierForm = document.getElementById('volunteer-form');
+            const missionDashboard = document.getElementById('mission-dashboard');
+            
+            document.getElementById('switch-to-register').onclick = () => {
+                authOverlay.classList.add('hidden');
+                dossierForm.classList.remove('hidden');
+                document.getElementById('back-to-login-btn').classList.remove('hidden');
+            };
+
+            window.showAuthOverlay = () => {
+                authOverlay.classList.remove('hidden');
+                dossierForm.classList.add('hidden');
+            };
+
+            // Auth Logic
+            loginForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('login-btn');
+                const err = document.getElementById('login-error');
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+                try {
+                    await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value);
+                    err.classList.add('hidden');
+                } catch(error) {
+                    err.classList.remove('hidden'); err.innerText = error.message;
+                    btn.innerHTML = 'Authenticate Session';
+                }
+            };
+            
+            const globalLogout = document.getElementById('global-logout-btn');
+            if(globalLogout) {
+                globalLogout.onclick = async () => {
+                    await signOut(auth);
+                    location.reload();
+                };
+            }
+            
+            const localLogout = document.getElementById('logout-btn');
+            if(localLogout) {
+                localLogout.onclick = async () => {
+                    await signOut(auth);
+                    location.reload();
+                };
+            }
+
+            // Core State
+            onAuthStateChanged(auth, async (user) => {
+                if(user) {
+                    currentUser = user;
+                    authOverlay.classList.add('hidden'); // Hide modal
+                    if(globalLogout) globalLogout.classList.remove('hidden');
+                    
+                    // Check if profile exists
+                    const profileSnap = await getDoc(doc(db, "volunteers", user.uid));
+                    
+                    if(profileSnap.exists()) {
+                        window.location.href = 'operative.html';
+                        return;
+                    } else {
+                        dossierForm.classList.remove('hidden');
+                        missionDashboard.classList.add('hidden');
+                        
+                        const credsSection = document.getElementById('credentials-section');
+                        if(credsSection) credsSection.classList.add('hidden');
+                        const btl = document.getElementById('back-to-login-btn');
+                        if(btl) btl.classList.add('hidden');
+                        
+                        document.querySelector('h2.text-3xl').innerText = 'Register as a Volunteer Asset';
+                        document.querySelector('p.leading-relaxed').innerText = 'Enlist in the Vicinity Command network. Select your expertise and vehicle proficiencies precisely so Command can deploy you to optimal scenarios.';
+                    }
+                } else {
+                    currentUser = null;
+                    authOverlay.classList.remove('hidden');
+                    if(globalLogout) globalLogout.classList.add('hidden');
+                    document.getElementById('login-btn').innerHTML = 'Authenticate Session';
+                }
+            });
+
+            // Dossier Submission
+            dossierForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = e.target.querySelector('button[type="submit"]');
+                const err = document.getElementById('signup-error');
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Writing Record...';
+                
+                try {
+                    let activeUid = null;
+                    let activeEmail = null;
+                    
+                    if(!currentUser) {
+                        const email = document.getElementById('reg-email').value;
+                        const pass = document.getElementById('reg-password').value;
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                        activeUid = userCredential.user.uid;
+                        activeEmail = userCredential.user.email;
+                    } else {
+                        activeUid = currentUser.uid;
+                        activeEmail = currentUser.email;
+                    }
+                    
+                    if(err) err.classList.add('hidden');
+                    
+                    const nameNode = document.querySelector('input[placeholder*="John Doe"]');
+                    const phoneNode = document.getElementById('reg-phone');
+                    const formArgs = {
+                        id: activeUid,
+                        name: nameNode ? nameNode.value : 'New Asset',
+                        email: activeEmail,
+                        phone: phoneNode ? phoneNode.value : '',
+                        availability: 'Deployment Ready',
+                        skills: Array.from(document.querySelectorAll('input[name="expertise"]:checked')).map(el => el.value),
+                        vehicles: Array.from(document.querySelectorAll('input[name="vehicle"]:checked')).map(el => el.value),
+                        location: document.querySelector('select').value,
+                        status: 'Active',
+                        active: true,
+                        rating: 100
+                    };
+                    await setDoc(doc(db, "volunteers", activeUid), formArgs);
+                    document.getElementById('success-state').classList.remove('hidden');
+                    // Redirect to the new active Operations mobile UI after creating a profile
+                    setTimeout(() => window.location.href = 'operative.html', 2000);
+                } catch (error) {
+                    if(err) {
+                        err.classList.remove('hidden');
+                        err.innerText = error.message;
+                    }
+                    btn.innerHTML = 'Initialize Asset Record <i class="fa-solid fa-fingerprint text-brand-dark-bg/80"></i>';
+                }
+            };
+            
+            // Mission Dashboard Logic
+            window.activeOpMaps = {};
+            
+            window.currentMissionIds = window.currentMissionIds || new Set();
+
+            window.switchVolTab = function(tab) {
+                const tabs = ['active', 'accomplished', 'stats'];
+                tabs.forEach(t => {
+                    const btn = document.getElementById(`tab-vol-${t}`);
+                    const cont = document.getElementById(`${t}-tasks-container`) || document.getElementById(`stats-container`);
+                    
+                    if (btn && cont) {
+                        if (t === tab) {
+                            btn.className = `text-lg sm:text-xl font-heading ${t === 'active' ? 'text-brand-amber border-b-2 border-brand-amber' : (t === 'accomplished' ? 'text-brand-green border-b-2 border-brand-green' : 'text-blue-400 border-b-2 border-blue-400')} pb-1 transition-all`;
+                            cont.classList.remove('hidden');
+                        } else {
+                            btn.className = `text-lg sm:text-xl font-heading text-gray-500 hover:text-${t === 'accomplished' ? 'brand-green' : (t === 'active' ? 'brand-amber' : 'blue-400')} border-b-2 border-transparent hover:border-${t === 'accomplished' ? 'brand-green' : (t === 'active' ? 'brand-amber' : 'blue-400')} pb-1 transition-all`;
+                            cont.classList.add('hidden');
+                        }
+                    }
+                });
+            };
+
+            window.renderVolStats = function() {
+                const cont = document.getElementById('stats-container');
+                const profile = window.volunteerProfile;
+                if(!cont || !profile) return;
+                
+                const points = profile.points || 0;
+                const missions = profile.missionsCompleted || 0;
+                let rank = 'Trainee';
+                let rankColor = 'text-gray-400';
+                if(points >= 500) { rank = 'SPECIAL AGENT'; rankColor = 'text-purple-400'; }
+                else if(points >= 100) { rank = 'OPERATIVE'; rankColor = 'text-brand-amber'; }
+                
+                cont.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+                        <div class="bg-brand-dark-bg border border-brand-dark-border rounded-xl p-6 text-center shadow-inner hover:border-brand-amber/50 transition-colors group">
+                            <i class="fa-solid fa-medal text-4xl text-brand-dark-panel group-hover:text-brand-amber drop-shadow-[0_0_15px_rgba(240,165,0,0.5)] transition-colors mb-4"></i>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Current Rank</h4>
+                            <div class="text-2xl font-black ${rankColor} font-heading uppercase tracking-widest drop-shadow-md">${rank}</div>
+                        </div>
+                        <div class="bg-brand-dark-bg border border-brand-dark-border rounded-xl p-6 text-center shadow-inner hover:border-blue-500/50 transition-colors group">
+                            <i class="fa-solid fa-bolt text-4xl text-brand-dark-panel group-hover:text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-colors mb-4"></i>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Accrued Sec-Points</h4>
+                            <div class="text-4xl font-black text-white font-heading">${points}</div>
+                        </div>
+                        <div class="bg-brand-dark-bg border border-brand-dark-border rounded-xl p-6 text-center shadow-inner hover:border-brand-green/50 transition-colors group">
+                            <i class="fa-solid fa-check-double text-4xl text-brand-dark-panel group-hover:text-brand-green-light drop-shadow-[0_0_15px_rgba(26,60,52,0.8)] transition-colors mb-4"></i>
+                            <h4 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Missions Accomplished</h4>
+                            <div class="text-4xl font-black text-white font-heading">${missions}</div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            function getMissionPointsInfo(m) {
+                // Score dynamically maps directly to the AI intensity rating, capped at 100
+                return Math.max(10, Math.min(100, m.urgencyScore || 50));
+            }
+
+            function fetchAndRenderMissions(uid, needsList) {
+                const activeContainer = document.getElementById('active-tasks-container');
+                const accomplishedContainer = document.getElementById('accomplished-tasks-container');
+                
+                const assigned = needsList.filter(n => n.assignedTo === uid || (n.assignedTo && n.assignedTo.includes(uid)));
+                const activeMissions = assigned.filter(n => n.status !== 'Resolved');
+                const accomplishedMissions = assigned.filter(n => n.status === 'Resolved');
+                window.currentAssignedMissions = activeMissions;
+                
+                if (accomplishedMissions.length === 0) {
+                     accomplishedContainer.innerHTML = '<div class="text-gray-500 text-sm py-8 text-center italic">No accomplished missions yet. Stand by for deployment.</div>';
+                } else {
+                     accomplishedContainer.innerHTML = '<div class="space-y-4 animate-fade-in">' + accomplishedMissions.map(m => `
+                         <div class="bg-brand-dark-bg border-l-4 border-l-brand-green border-t border-b border-r border-t-brand-dark-border border-b-brand-dark-border border-r-brand-dark-border rounded-r-xl p-4 flex justify-between items-center transition-all hover:bg-brand-dark-panel/30">
+                             <div>
+                                 <h4 class="text-gray-300 font-bold text-sm tracking-wide line-through decoration-brand-green decoration-2 opacity-80">${m.category}</h4>
+                                 <span class="text-[10px] uppercase font-mono text-brand-green font-bold"><i class="fa-solid fa-check"></i> ${m.location || 'UNKNOWN ZONE'} • SECURED</span>
+                             </div>
+                             <div class="text-blue-400 flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded border border-blue-500/30">
+                                 <span class="font-black text-xs font-mono tracking-widest">+${getMissionPointsInfo(m)}</span>
+                                 <i class="fa-solid fa-bolt"></i>
+                             </div>
+                         </div>
+                     `).join('') + '</div>';
+                }
+
+                if(activeMissions.length === 0) {
+                    activeContainer.innerHTML = '<div class="text-brand-amber font-bold text-sm py-6 text-center bg-brand-dark-bg/50 border border-brand-amber/30 rounded-xl"><i class="fa-solid fa-mug-hot mb-2 text-2xl"></i><br>Standby. No active deployments assigned.</div>';
+                    window.currentMissionIds.clear();
+                    window.activeOpMaps = {};
+                    return;
+                }
+                
+                // Check if the current missions are exactly the same as rendered
+                const newMissionIds = new Set(activeMissions.map(m => m.id));
+                const isSameMissions = newMissionIds.size === window.currentMissionIds.size && [...newMissionIds].every(id => window.currentMissionIds.has(id));
+                
+                if (!isSameMissions) {
+                    // Full re-render needed
+                    activeContainer.innerHTML = activeMissions.map(m => `
+                        <div class="bg-brand-dark-bg border border-red-500/30 rounded-xl p-5 relative overflow-hidden transition-all hover:border-red-500">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded bg-red-500/20 text-red-500 border border-red-500/30">${m.urgencyLevel || 'CRITICAL'} PRIORITY</span>
+                                <span class="text-xs font-mono text-gray-500">${m.id}</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-white mb-1">${m.category} - ${m.subCategory}</h4>
+                            <p class="text-sm text-gray-400 mb-4">${m.description}</p>
+                            
+                            ${m.aiReconIntel ? `
+                            <div class="mb-5 bg-purple-900/20 border border-purple-500/30 rounded-xl p-4 shadow-[inset_0_0_15px_rgba(168,85,247,0.1)]">
+                                <p class="text-[9px] font-black tracking-widest uppercase text-purple-400 mb-3 flex items-center gap-2"><i class="fa-solid fa-satellite-dish animate-pulse"></i> Tactical Vision Analysis</p>
+                                ${m.aiReconImage ? `<img src="${m.aiReconImage}" class="w-full h-32 object-cover rounded-lg mb-3 opacity-80 border border-purple-500/30">` : ''}
+                                <div class="text-xs text-gray-300 font-mono space-y-1.5">
+                                    ${m.aiReconIntel.split('\n').filter(l=>l.trim()!=='').map(l => `<p class="border-l-2 border-purple-500/50 pl-2.5 py-0.5">${l}</p>`).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+
+                            <!-- Tactical Operative Map -->
+                            <div id="op-map-${m.id}" class="w-full h-48 sm:h-56 rounded-xl border border-brand-dark-border mb-5 relative z-10 bg-[#0a0f14]"></div>
+
+                            <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                                <div class="text-xs text-brand-amber font-bold tracking-wide">
+                                    <i class="fa-solid fa-location-dot mr-1"></i> ${m.location}
+                                    <div class="text-[9px] text-green-400 mt-1 uppercase opacity-80"><i class="fa-solid fa-satellite fa-spin mr-1"></i> Transmitting GPS Tracking</div>
+                                </div>
+                                
+                                <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+                                    <!-- Hidden Camera Input -->
+                                    <input type="file" accept="image/*" capture="environment" id="recon-cam-${m.id}" class="hidden" onchange="window.processReconImage(this.files[0], '${m.id}')">
+                                    
+                                    ${m.status === 'Pending' || m.status === 'Open' ? `
+                                    <button onclick="window.approveMission('${m.id}')" class="flex-1 xl:flex-none bg-brand-amber/20 hover:bg-brand-amber border border-brand-amber text-brand-amber hover:text-brand-dark-bg py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all font-mono shadow-[0_0_10px_rgba(240,165,0,0.2)]">
+                                        <i class="fa-solid fa-thumbs-up mr-1"></i> Approve deployment
+                                    </button>
+                                    ` : `
+                                    <button onclick="document.getElementById('recon-cam-${m.id}').click()" id="btn-recon-${m.id}" class="flex-1 xl:flex-none bg-purple-600/20 hover:bg-purple-600 border border-purple-500 text-purple-400 hover:text-white py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                                        <i class="fa-solid fa-camera-viewfinder mr-1"></i> AI Recon
+                                    </button>
+                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}" target="_blank" class="flex-1 xl:flex-none text-center bg-blue-600/20 hover:bg-blue-600 border border-blue-500 text-blue-400 hover:text-white py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">
+                                        <i class="fa-solid fa-diamond-turn-right mr-1"></i> Nav
+                                    </a>
+                                    <button onclick="window.resolveMission('${m.id}')" class="flex-1 xl:flex-none bg-brand-green/20 hover:bg-brand-green border border-brand-green text-brand-green-light hover:text-white py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">
+                                        <i class="fa-solid fa-check-double mr-1"></i> Resolve
+                                    </button>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    window.currentMissionIds = newMissionIds;
+                    window.activeOpMaps = {}; // <-- Critical Fix: Reset active map registry since DOM was wiped out
+                }
+                
+                // Draw or update maps
+                setTimeout(() => {
+                    activeMissions.forEach(m => {
+                        if(navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                                pos => {
+                                    drawOpRouteMap(`op-map-${m.id}`, pos.coords.latitude, pos.coords.longitude, m.lat, m.lng);
+                                }, 
+                                () => {
+                                    drawOpRouteMap(`op-map-${m.id}`, 12.9716, 77.5946, m.lat, m.lng);
+                                },
+                                { timeout: 5000, maximumAge: 60000 }
+                            );
+                        } else {
+                            drawOpRouteMap(`op-map-${m.id}`, 12.9716, 77.5946, m.lat, m.lng);
+                        }
+                    });
+                }, 100);
+            }
+            
+            function drawOpRouteMap(containerId, startLat, startLng, destLat, destLng) {
+                let mapContext = window.activeOpMaps[containerId];
+                
+                if (mapContext) {
+                    // Update existing map
+                    mapContext.opMarker.setLatLng([startLat, startLng]);
+                    mapContext.destMarker.setLatLng([destLat, destLng]);
+                    
+                    fetch(`https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${destLng},${destLat}?overview=full&geometries=geojson`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.routes && data.routes[0]) {
+                            const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                            mapContext.routeLayer.setLatLngs(coords);
+                        } else {
+                            mapContext.routeLayer.setLatLngs([[startLat, startLng], [destLat, destLng]]);
+                        }
+                    }).catch(err => console.error("OSRM update route failed:", err));
+                    return;
+                }
+                
+                // Create new map
+                const mapEl = document.getElementById(containerId);
+                if(!mapEl) return;
+                
+                const map = L.map(containerId, { zoomControl: false, attributionControl: false }).setView([startLat, startLng], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+                
+                const routeLayer = L.polyline([[startLat, startLng], [destLat, destLng]], { color: '#EF4444', weight: 4, opacity: 0.8, dashArray: '8, 8' }).addTo(map);
+                const opMarker = L.circleMarker([startLat, startLng], { radius: 8, fillColor: '#3b82f6', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map); 
+                const destMarker = L.circleMarker([destLat, destLng], { radius: 8, fillColor: '#EF4444', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(map);
+                
+                window.activeOpMaps[containerId] = { map, opMarker, destMarker, routeLayer };
+                
+                fetch(`https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${destLng},${destLat}?overview=full&geometries=geojson`)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.routes && data.routes[0]) {
+                        const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                        routeLayer.setLatLngs(coords);
+                        map.fitBounds(routeLayer.getBounds(), { padding: [20, 20] });
+                        setTimeout(() => map.invalidateSize(), 50);
+                    }
+                }).catch(err => console.error("OSRM initial route failed:", err));
+            }
+
+            let opCurrentPos = null;
+            let watchId = null;
+            function startLocationBroadcast(uid) {
+                if(!navigator.geolocation) return;
+                
+                if(watchId) navigator.geolocation.clearWatch(watchId);
+                
+                watchId = navigator.geolocation.watchPosition(
+                    pos => {
+                        const newLat = pos.coords.latitude;
+                        const newLng = pos.coords.longitude;
+                        opCurrentPos = { lat: newLat, lng: newLng };
+                        
+                        if (window.activeOpMaps) {
+                            Object.values(window.activeOpMaps).forEach(mapContext => {
+                                if (mapContext && mapContext.opMarker && mapContext.map) {
+                                    mapContext.opMarker.setLatLng([newLat, newLng]);
+                                    mapContext.map.panTo([newLat, newLng], { animate: true, duration: 1.5 });
+                                }
+                            });
+                        }
+
+                        updateDoc(doc(db, "volunteers", uid), { lat: newLat, lng: newLng }).catch(() => {});
+                        if(window.currentAssignedMissions) {
+                            window.currentAssignedMissions.forEach(m => {
+                                updateDoc(doc(db, "needs", m.id), { operativeLocation: { lat: newLat, lng: newLng } }).catch(() => {});
+                            });
+                        }
+                    },
+                    err => console.error("GPS Broadcast Failed:", err),
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+                );
+            }
+            
+            window.approveMission = async function(needId) {
+                try {
+                    await updateDoc(doc(db, "needs", needId), {
+                        status: 'In Progress',
+                        approvedAt: new Date().toISOString()
+                    });
+                } catch(e) {
+                    console.error("Approval sync failed", e);
+                }
+            };
+
+            window.resolveMission = function(needId) {
+                const modalId = 'volunteer-confirm-modal';
+                if(document.getElementById(modalId)) return;
+                
+                const modalHtml = `
+                    <div id="${modalId}" class="fixed inset-0 z-[9999] flex items-center justify-center bg-brand-dark-bg/80 backdrop-blur-sm animate-fade-in p-4">
+                        <div class="bg-brand-dark-panel border-2 border-brand-green/50 rounded-2xl p-6 max-w-sm w-full shadow-[0_0_40px_rgba(16,185,129,0.15)] transform scale-100 transition-transform">
+                            <div class="flex items-center gap-3 border-b border-brand-dark-border pb-4 mb-4">
+                                <div class="w-10 h-10 rounded-full bg-brand-green/20 text-brand-green flex items-center justify-center text-xl shrink-0">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-heading text-xl tracking-wide">Resolve Mission</h3>
+                                    <p class="text-brand-green text-[10px] font-mono tracking-widest uppercase">Target Secure</p>
+                                </div>
+                            </div>
+                            
+                            <p class="text-sm text-gray-300 mb-6 font-mono leading-relaxed">
+                                Confirm the objective is secured. This will transmit the resolution signal back to Command HQ. Proceed?
+                            </p>
+                            
+                            <div class="flex gap-3 justify-end">
+                                <button onclick="document.getElementById('${modalId}').remove()" class="px-4 py-2 rounded-lg font-bold text-xs tracking-wide bg-brand-dark-bg border border-brand-dark-border hover:text-white hover:border-gray-500 transition-colors font-mono uppercase">
+                                    Cancel
+                                </button>
+                                <button onclick="window.executeResolve('${needId}'); document.getElementById('${modalId}').remove()" class="px-4 py-2 rounded-lg font-bold text-xs tracking-wide bg-brand-green hover:bg-opacity-80 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-colors flex items-center gap-2 font-mono uppercase">
+                                    <i class="fa-solid fa-check"></i> Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+            };
+
+            window.executeResolve = async function(needId) {
+                try {
+                    await updateDoc(doc(db, "needs", needId), {
+                        status: 'Resolved',
+                        resolvedAt: new Date().toISOString()
+                    });
+                    
+                    let earnedPoints = 50;
+                    if(window.currentAssignedMissions) {
+                        const m = window.currentAssignedMissions.find(x => x.id === needId);
+                        if(m) {
+                            earnedPoints = Math.max(10, Math.min(100, m.urgencyScore || 50));
+                        }
+                    }
+                    
+                    if(currentUser) {
+                        try {
+                            await updateDoc(doc(db, "volunteers", currentUser.uid), {
+                                points: increment(earnedPoints),
+                                missionsCompleted: increment(1)
+                            });
+                        } catch(innerE) {
+                            console.error("Points increment failed: ", innerE);
+                        }
+                    }
+                } catch(e) {
+                    console.error("Resolution sync failed", e);
+                }
+            };
+
+            // AI Vision Recon Engine
+            window.processReconImage = async function(file, needId) {
+                if(!file) return;
+                
+                const btn = document.getElementById(`btn-recon-${needId}`);
+                if(btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uplinking...';
+                    btn.disabled = true;
+                    btn.classList.add('opacity-80', 'cursor-wait');
+                }
+
+                try {
+                    // 1. Compress Image via Canvas to guarantee small payload overhead
+                    const compressedBase64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = (event) => {
+                            const img = new Image();
+                            img.src = event.target.result;
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const MAX_WIDTH = 1000;
+                                const scaleSize = MAX_WIDTH / img.width;
+                                canvas.width = MAX_WIDTH;
+                                canvas.height = img.height * scaleSize;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                // Export as JPEG, 70% quality (Massive payload size reduction)
+                                resolve(canvas.toDataURL('image/jpeg', 0.7));
+                            };
+                            img.onerror = error => reject(error);
+                        };
+                    });
+
+                    // Strip mime prefix (e.g. data:image/jpeg;base64,)
+                    const base64Data = compressedBase64.split(',')[1];
+
+                    // 2. Transmit to Gemini Multimodal API with STRICT JSON structure enforcement & Markdown rules
+                    const API_KEY = "AIzaSyACgecLgKxdeks78FWXnwBqmaVsQ97cbN8";
+                    const prompt = `Act as a Combat Engineer & Triage Medic. Analyze this disaster image. You MUST output ONLY valid JSON in this exact structure:
+{
+  "keywords": ["CRITICAL TAG 1", "CRITICAL TAG 2", "CRITICAL TAG 3"],
+  "damages": ["bullet 1 describing damages", "bullet 2"],
+  "solutions": ["bullet 1 outlining rescue actions", "bullet 2"]
+}
+Provide exactly 3 overarching, high-impact uppercase tags in the keywords array summarizing the core crisis (e.g. "THERMAL_BREACH", "HEMORRHAGE", "STRUCTURAL_COLLAPSE").
+Provide exactly 2 bullet points for damages (max 15 words each), and exactly 2 for solutions (max 15 words each). 
+CRITICAL RULE: Vigorously highlight essential tactical nouns within damages and solutions independently by wrapping them in **asterisks**. Do NOT wrap your whole response in markdown code blocks. Just raw JSON.`;
+
+                    const payload = {
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+                            ]
+                        }]
+                    };
+
+                    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + API_KEY, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+                    if(data.error) throw new Error(data.error.message);
+
+                    let visionIntelRaw = data.candidates[0].content.parts[0].text;
+                    visionIntelRaw = visionIntelRaw.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
+                    const visionIntel = JSON.parse(visionIntelRaw);
+
+                    // 3. Upload AI Intel directly to Firebase for Command OS parsing
+                    await updateDoc(doc(db, "needs", needId), {
+                        aiReconIntel: visionIntel,
+                        aiReconImage: compressedBase64,
+                        aiReconTimestamp: new Date().toISOString()
+                    });
+
+                    if(btn) {
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Intel Synced';
+                        btn.classList.replace('bg-purple-600/20', 'bg-brand-green');
+                        btn.classList.replace('border-purple-500', 'border-brand-green');
+                        btn.classList.replace('text-purple-400', 'text-white');
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-80', 'cursor-wait');
+                    }
+
+                } catch(error) {
+                    console.error("AI Recon Failure: ", error);
+                    alert("Recon Uplink Failed: " + error.message);
+                    if(btn) {
+                        btn.innerHTML = '<i class="fa-solid fa-camera-viewfinder"></i> Retry Recon';
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-80', 'cursor-wait');
+                    }
+                }
+            };
+            
+            // Local UI auto-refreshes due to onSnapshot listener
+        </script>
+    
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { 
+            -webkit-font-smoothing: antialiased; 
+            color-scheme: dark;
+        }
+        .request-input { 
+            width: 100%; 
+            background: rgba(11, 14, 20, 0.5);
+            border: 1px solid #25303D; 
+            border-radius: 0.75rem; 
+            padding: 0.875rem 1rem; 
+            color: #e2e8f0; 
+            transition: all 0.2s; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .request-input:focus { 
+            border-color: #F0A500; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 0 1px rgba(240,165,0,0.2); 
+            outline: none; 
+        }
+        
+        /* Custom Select Arrow */
+        .select-arrow {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-position: right 1rem center;
+            background-size: 1.25em;
+            background-repeat: no-repeat;
+            padding-right: 2.5rem;
+        }
+        
+        .dark-card {
+            background-color: rgba(21, 28, 37, 0.85);
+            border: 1px solid #25303D;
+        }
+
+        /* Interactive Skill/Vehicle Checkboxes */
+        .choice-checkbox:checked + .choice-panel {
+            border-color: #F0A500;
+            background-color: rgba(240, 165, 0, 0.05);
+            box-shadow: inset 0 0 15px rgba(240,165,0,0.1);
+        }
+        .choice-checkbox:checked + .choice-panel .choice-icon {
+            color: #F0A500;
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 8px rgba(240,165,0,0.6));
+        }
+        .choice-checkbox:checked + .choice-panel .choice-text {
+            color: #F0A500;
+        }
+        .choice-checkbox:checked + .choice-panel .check-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body class="bg-brand-dark-bg text-gray-300 flex flex-col h-screen overflow-hidden selection:bg-brand-amber selection:text-brand-dark-bg relative">
+    
+    <!-- Background graphics -->
+    <div class="absolute inset-0 opacity-[0.02] flex items-center justify-center overflow-hidden pointer-events-none z-0">
+        <i class="fa-solid fa-users-viewfinder text-[50rem] text-brand-green"></i>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-brand-dark-panel/90 backdrop-blur-md border-b border-brand-dark-border text-white p-4 sm:px-8 shadow-sm flex justify-between items-center z-20 shrink-0">
+        <h1 class="text-2xl font-bubbly font-black flex items-center gap-3 tracking-wide drop-shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-8 h-8 text-brand-amber drop-shadow-[0_0_8px_rgba(240,165,0,0.6)]" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 5 L12 19 L20 5" stroke-width="2.5" />
+                <path d="M8 11.5 Q 12 15.5 16 11.5" stroke-width="2" stroke="#1A3C34" opacity="0.9" />
+                <circle cx="12" cy="7.5" r="2.5" fill="#1A3C34" stroke="none" class="animate-pulse drop-shadow-[0_0_5px_rgba(26,60,52,0.6)]" />
+            </svg>
+            Operative Enrollment
+        </h1>
+        <div class="flex items-center gap-4">
+            <div class="text-xs font-bold text-gray-400 bg-brand-dark-bg px-4 py-2.5 rounded-full border border-brand-dark-border shadow-inner hidden sm:flex items-center gap-2 tracking-widest uppercase">
+                <i class="fa-solid fa-shield-halved text-brand-green"></i> Secure Vicinity Link
+            </div>
+            <button id="global-logout-btn" class="hidden text-xs font-bold bg-brand-dark-panel border border-brand-dark-border text-gray-400 hover:text-brand-amber py-2 px-4 rounded-lg uppercase tracking-widest transition-colors shadow-sm">
+                <i class="fa-solid fa-power-off"></i> Disconnect
+            </button>
+        </div>
+    </header>
+
+        <!-- Authentication Overlay -->
+        <div id="auth-overlay" class="absolute inset-0 bg-brand-dark-bg z-50 flex flex-col items-center justify-center">
+            <div class="w-full max-w-md p-8 relative bg-brand-dark-panel border border-brand-dark-border rounded-3xl shadow-2xl">
+                <div class="text-center mb-10">
+                    <i class="fa-solid fa-user-astronaut text-6xl text-brand-green-light mb-6"></i>
+                    <h2 class="text-3xl font-heading text-white tracking-wide">Operative Uplink</h2>
+                    <p class="text-gray-500 text-sm mt-2 font-bold tracking-widest uppercase">Secure Identity Verification</p>
+                </div>
+                <form id="login-form" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Operative Email</label>
+                        <input type="email" id="login-email" class="w-full bg-brand-dark-bg/50 border border-brand-dark-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-amber" required />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 ml-1">Passkey</label>
+                        <input type="password" id="login-password" class="w-full bg-brand-dark-bg/50 border border-brand-dark-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-amber" required />
+                    </div>
+                    <div id="login-error" class="hidden text-red-500 text-xs font-bold text-center"></div>
+                    <button type="submit" id="login-btn" class="w-full bg-brand-green hover:bg-brand-amber text-white font-semibold py-3.5 rounded-xl transition-all">Authenticate Session</button>
+                </form>
+                
+                <div class="mt-8 pt-6 border-t border-brand-dark-border text-center">
+                    <p class="text-sm text-gray-500 mb-4">Unregistered asset?</p>
+                    <button type="button" id="switch-to-register" class="w-full bg-brand-dark-bg border border-brand-amber text-brand-amber py-3.5 rounded-xl transition-all hover:bg-brand-amber hover:text-white tracking-wide font-bold">Initialize New Dossier</button>
+                </div>
+            </div>
+        </div>
+    
+
+    <!-- Main Container -->
+    <main class="flex-1 overflow-y-auto w-full flex justify-center p-4 sm:p-6 lg:p-8 z-10">
+        <div class="max-w-3xl w-full">
+            <div class="dark-card rounded-3xl p-6 sm:p-10 shadow-[0_15px_40px_rgba(0,0,0,0.4)] relative overflow-hidden backdrop-blur-xl">
+                
+                <div class="relative z-10 mb-8 text-center sm:text-left flex flex-col sm:flex-row justify-between items-start gap-4">
+                    <div>
+                        <h2 id="main-dashboard-title" class="text-3xl sm:text-4xl font-heading text-brand-amber mb-3 drop-shadow-md tracking-wide">Register as a Volunteer Asset</h2>
+                        <p id="main-dashboard-subtitle" class="text-gray-400 text-sm sm:text-base leading-relaxed max-w-xl">Enlist in the Vicinity Command network. Select your expertise and vehicle proficiencies precisely so Command can deploy you to optimal scenarios.</p>
+                    </div>
+                    <button type="button" onclick="window.showAuthOverlay()" class="text-xs font-bold bg-brand-dark-panel border border-brand-dark-border text-brand-amber hover:text-white py-2 px-4 rounded-lg uppercase tracking-widest hidden shrink-0 shadow-sm" id="back-to-login-btn"><i class="fa-solid fa-arrow-left mr-1"></i> Return to Login</button>
+                </div>
+                
+                <form id="volunteer-form" class="space-y-10 relative z-10 hidden">
+                    
+                    <!-- 0. Secure Account Engine -->
+                    <div class="space-y-5" id="credentials-section">
+                        <h3 class="font-bold text-lg text-white border-b border-brand-dark-border pb-2 flex items-center gap-3">
+                            <span class="bg-brand-dark-bg border border-brand-dark-border text-brand-amber w-8 h-8 rounded-full flex items-center justify-center text-sm font-black font-mono shadow-inner"><i class="fa-solid fa-lock text-xs"></i></span> Authentication Credentials
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Operative Email</label>
+                                <div class="relative group">
+                                    <i class="fa-solid fa-envelope absolute left-4 top-[1.125rem] text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                                    <input type="email" id="reg-email" class="request-input pl-11 font-medium tracking-wide" placeholder="example@vicinity.org">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Passkey</label>
+                                <div class="relative group">
+                                    <i class="fa-solid fa-lock absolute left-4 top-[1.125rem] text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                                    <input type="password" id="reg-password" class="request-input pl-11 font-medium tracking-wide" placeholder="••••••••">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="signup-error" class="hidden text-brand-amber bg-brand-amber/10 border border-brand-amber/30 p-3 rounded-lg text-xs font-bold font-mono tracking-wide mt-2 shadow-[0_0_10px_rgba(240,165,0,0.1)]"></div>
+                    </div>
+                    
+                    <!-- 1. Operative Identity -->
+                    <div class="space-y-5">
+                        <h3 class="font-bold text-lg text-white border-b border-brand-dark-border pb-2 flex items-center gap-3">
+                            <span class="bg-brand-dark-bg border border-brand-dark-border text-brand-amber w-8 h-8 rounded-full flex items-center justify-center text-sm font-black font-mono shadow-inner">1</span> Operative Identity
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Full Name / Callsign</label>
+                                <div class="relative group">
+                                    <i class="fa-regular fa-id-badge absolute left-4 top-[1.125rem] text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                                    <input type="text" class="request-input pl-11 font-medium tracking-wide" placeholder="E.g., John Doe / 'Falcon'" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Secure Comm Link</label>
+                                <div class="relative group">
+                                    <i class="fa-solid fa-headset absolute left-4 top-[1.125rem] text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                                    <input type="tel" id="reg-phone" class="request-input pl-11 font-medium tracking-wide" placeholder="Phone Number" required>
+                                </div>
+                            </div>
+                            <!-- Age & Location -->
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Biological Age</label>
+                                <div class="relative group">
+                                    <i class="fa-solid fa-cake-candles absolute left-4 top-[1.125rem] text-gray-500 group-focus-within:text-brand-amber transition-colors"></i>
+                                    <input type="number" min="16" max="99" class="request-input pl-11 font-medium tracking-wide" placeholder="Years" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 ml-1">Base Sector</label>
+                                <select class="request-input select-arrow cursor-pointer font-medium tracking-wide" required>
+                                    <option value="" disabled selected>Operational zone</option>
+                                    <option>Hoskote (Outskirts-East)</option>
+                                    <option>Marathahalli (East)</option>
+                                    <option>Whitefield (East)</option>
+                                    <option>Indiranagar (East-Central)</option>
+                                    <option>Koramangala (South-East)</option>
+                                    <option>Jayanagar (South)</option>
+                                    <option>Electronic City (South)</option>
+                                    <option>Malleshwaram (North-West)</option>
+                                    <option>Yeshwanthpur (North-West)</option>
+                                    <option>Yelahanka (North)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Core Operational Expertise -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-lg text-white border-b border-brand-dark-border pb-2 flex items-center gap-3">
+                            <span class="bg-brand-dark-bg border border-brand-dark-border text-brand-amber w-8 h-8 rounded-full flex items-center justify-center text-sm font-black font-mono shadow-inner">2</span> Core Expertise & Profession
+                        </h3>
+                        <p class="text-xs text-gray-500 font-medium ml-1 mb-2 tracking-wide">Select the specialties where you are professionally trained or highly experienced.</p>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                            <!-- Medical -->
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="expertise" value="Medical">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 h-full group hover:bg-brand-dark-panel hover:border-gray-500">
+                                    <i class="fa-solid fa-suitcase-medical choice-icon text-3xl mb-3 text-gray-500 transition-all duration-300"></i>
+                                    <span class="choice-text text-sm font-bold text-gray-300 tracking-wide transition-colors">Medical Team</span>
+                                    <span class="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Docs, EMTs, Nurses</span>
+                                    
+                                    <div class="check-badge absolute top-3 right-3 bg-brand-amber text-brand-dark-bg rounded-full w-5 h-5 flex items-center justify-center opacity-0 scale-50 transition-all duration-300">
+                                        <i class="fa-solid fa-check text-[10px] font-black"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Rescue -->
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="expertise" value="Rescue">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 h-full group hover:bg-brand-dark-panel hover:border-gray-500">
+                                    <i class="fa-solid fa-person-digging choice-icon text-3xl mb-3 text-gray-500 transition-all duration-300"></i>
+                                    <span class="choice-text text-sm font-bold text-gray-300 tracking-wide transition-colors">Rescue & Ops</span>
+                                    <span class="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Debris, Search, Heavy Lifting</span>
+                                    
+                                    <div class="check-badge absolute top-3 right-3 bg-brand-amber text-brand-dark-bg rounded-full w-5 h-5 flex items-center justify-center opacity-0 scale-50 transition-all duration-300">
+                                        <i class="fa-solid fa-check text-[10px] font-black"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Logistics -->
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="expertise" value="Logistics">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 h-full group hover:bg-brand-dark-panel hover:border-gray-500">
+                                    <i class="fa-solid fa-boxes-packing choice-icon text-3xl mb-3 text-gray-500 transition-all duration-300"></i>
+                                    <span class="choice-text text-sm font-bold text-gray-300 tracking-wide transition-colors">Logistics & Supply</span>
+                                    <span class="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Distribution, Inventory</span>
+                                    
+                                    <div class="check-badge absolute top-3 right-3 bg-brand-amber text-brand-dark-bg rounded-full w-5 h-5 flex items-center justify-center opacity-0 scale-50 transition-all duration-300">
+                                        <i class="fa-solid fa-check text-[10px] font-black"></i>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <!-- Civil Engineer -->
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="expertise" value="Engineering">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 h-full group hover:bg-brand-dark-panel hover:border-gray-500">
+                                    <i class="fa-solid fa-compass-drafting choice-icon text-3xl mb-3 text-gray-500 transition-all duration-300"></i>
+                                    <span class="choice-text text-sm font-bold text-gray-300 tracking-wide transition-colors">Civil Engineering</span>
+                                    <span class="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Power, Infra Repair</span>
+                                    
+                                    <div class="check-badge absolute top-3 right-3 bg-brand-amber text-brand-dark-bg rounded-full w-5 h-5 flex items-center justify-center opacity-0 scale-50 transition-all duration-300">
+                                        <i class="fa-solid fa-check text-[10px] font-black"></i>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <!-- Unskilled / Support -->
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="expertise" value="General Support">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 h-full group hover:bg-brand-dark-panel hover:border-gray-500">
+                                    <i class="fa-solid fa-handshake-angle choice-icon text-3xl mb-3 text-gray-500 transition-all duration-300"></i>
+                                    <span class="choice-text text-sm font-bold text-gray-300 tracking-wide transition-colors">General Support</span>
+                                    <span class="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Crowd Mgmt, Cleaning</span>
+                                    
+                                    <div class="check-badge absolute top-3 right-3 bg-brand-amber text-brand-dark-bg rounded-full w-5 h-5 flex items-center justify-center opacity-0 scale-50 transition-all duration-300">
+                                        <i class="fa-solid fa-check text-[10px] font-black"></i>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <!-- Comms -->
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="expertise" value="Communications">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 h-full group hover:bg-brand-dark-panel hover:border-gray-500">
+                                    <i class="fa-solid fa-satellite-dish choice-icon text-3xl mb-3 text-gray-500 transition-all duration-300"></i>
+                                    <span class="choice-text text-sm font-bold text-gray-300 tracking-wide transition-colors">Communications</span>
+                                    <span class="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">Radio, Translators, Intel</span>
+                                    
+                                    <div class="check-badge absolute top-3 right-3 bg-brand-amber text-brand-dark-bg rounded-full w-5 h-5 flex items-center justify-center opacity-0 scale-50 transition-all duration-300">
+                                        <i class="fa-solid fa-check text-[10px] font-black"></i>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 3. Vehicle Certification -->
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-lg text-white border-b border-brand-dark-border pb-2 flex items-center gap-3">
+                            <span class="bg-brand-dark-bg border border-brand-dark-border text-brand-amber w-8 h-8 rounded-full flex items-center justify-center text-sm font-black font-mono shadow-inner">3</span> Vehicle & Asset Operation
+                        </h3>
+                        <p class="text-xs text-gray-500 font-medium ml-1 mb-2 tracking-wide">Select the vehicle classes you own or are certified to operate confidently in field conditions.</p>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="vehicle" value="Standard">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-xl p-3 flex items-center gap-3 transition-all duration-300 group hover:border-gray-500">
+                                    <i class="fa-solid fa-car-side choice-icon text-gray-500 text-lg transition-colors"></i>
+                                    <span class="choice-text text-xs font-bold text-gray-300 uppercase tracking-widest transition-colors">Standard Auto</span>
+                                </div>
+                            </label>
+                            
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="vehicle" value="Off-Road 4x4">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-xl p-3 flex items-center gap-3 transition-all duration-300 group hover:border-gray-500">
+                                    <i class="fa-solid fa-truck-pickup choice-icon text-gray-500 text-lg transition-colors"></i>
+                                    <span class="choice-text text-xs font-bold text-gray-300 uppercase tracking-widest transition-colors">4x4 / Off-Road</span>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="vehicle" value="Heavy Truck">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-xl p-3 flex items-center gap-3 transition-all duration-300 group hover:border-gray-500">
+                                    <i class="fa-solid fa-truck choice-icon text-gray-500 text-lg transition-colors"></i>
+                                    <span class="choice-text text-xs font-bold text-gray-300 uppercase tracking-widest transition-colors">Heavy Transport</span>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="vehicle" value="Motorcycle">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-xl p-3 flex items-center gap-3 transition-all duration-300 group hover:border-gray-500">
+                                    <i class="fa-solid fa-motorcycle choice-icon text-gray-500 text-lg transition-colors"></i>
+                                    <span class="choice-text text-xs font-bold text-gray-300 uppercase tracking-widest transition-colors">Motorcycle/ATV</span>
+                                </div>
+                            </label>
+                            
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="vehicle" value="Aquatic">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-xl p-3 flex items-center gap-3 transition-all duration-300 group hover:border-gray-500">
+                                    <i class="fa-solid fa-ship choice-icon text-gray-500 text-lg transition-colors"></i>
+                                    <span class="choice-text text-xs font-bold text-gray-300 uppercase tracking-widest transition-colors">Aquatic / Boat</span>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer relative">
+                                <input type="checkbox" class="choice-checkbox absolute opacity-0 w-0 h-0" name="vehicle" value="Aerial">
+                                <div class="choice-panel bg-brand-dark-bg border border-brand-dark-border rounded-xl p-3 flex items-center gap-3 transition-all duration-300 group hover:border-gray-500">
+                                    <i class="fa-solid fa-helicopter choice-icon text-gray-500 text-lg transition-colors"></i>
+                                    <span class="choice-text text-xs font-bold text-gray-300 uppercase tracking-widest transition-colors">Air / Drone</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 relative">
+                        <div class="absolute inset-0 bg-brand-amber/10 blur-xl rounded-2xl transform scale-y-110 pointer-events-none"></div>
+                        <button type="submit" class="w-full relative bg-brand-amber text-brand-dark-bg hover:bg-yellow-400 font-bubbly font-black py-4 rounded-2xl transition-all duration-300 shadow-[0_4px_14px_rgba(240,165,0,0.4)] hover:shadow-[0_4px_25px_rgba(240,165,0,0.6)] hover:-translate-y-1 flex justify-center items-center gap-3 tracking-widest text-2xl drop-shadow-sm">
+                            Initialize Asset Record <i class="fa-solid fa-fingerprint text-brand-dark-bg/80"></i>
+                        </button>
+                    </div>
+                </form>
+                    <!-- Mission Dashboard (Hidden initially) -->
+                    <div id="mission-dashboard" class="hidden relative z-10 space-y-6">
+                        <div class="flex justify-between items-center border-b border-brand-dark-border pb-4">
+                            <div class="flex gap-4 sm:gap-6">
+                                <button onclick="window.switchVolTab('active')" id="tab-vol-active" class="text-lg sm:text-xl font-heading text-brand-amber border-b-2 border-brand-amber pb-1 transition-all">Active</button>
+                                <button onclick="window.switchVolTab('accomplished')" id="tab-vol-accomplished" class="text-lg sm:text-xl font-heading text-gray-500 hover:text-brand-green border-b-2 border-transparent hover:border-brand-green pb-1 transition-all">Accomplished</button>
+                                <button onclick="window.switchVolTab('stats')" id="tab-vol-stats" class="text-lg sm:text-xl font-heading text-gray-500 hover:text-blue-400 border-b-2 border-transparent hover:border-blue-400 pb-1 transition-all">Stats & Rank</button>
+                            </div>
+                            <button id="logout-btn" class="shrink-0 text-[10px] sm:text-xs font-bold bg-brand-dark-panel border border-brand-dark-border text-gray-400 hover:text-white py-2 px-3 rounded-lg uppercase tracking-widest"><i class="fa-solid fa-power-off"></i><span class="hidden sm:inline ml-1">Disconnect</span></button>
+                        </div>
+                        <div id="active-tasks-container" class="space-y-4 text-left">
+                            <div class="text-gray-500 text-sm py-8 text-center italic">Waiting for Command assignment...</div>
+                        </div>
+                        <div id="accomplished-tasks-container" class="space-y-4 text-left hidden">
+                            <div class="text-gray-500 text-sm py-8 text-center italic">No accomplished missions yet...</div>
+                        </div>
+                        <div id="stats-container" class="space-y-4 text-left hidden">
+                            <div class="text-gray-500 text-sm py-8 text-center italic">Loading Operative telemetry...</div>
+                        </div>
+                    </div>
+
+                <!-- Full-Screen Success Overlay -->
+                <div id="success-state" class="hidden absolute inset-0 bg-brand-dark-bg/95 backdrop-blur-xl z-20 flex flex-col items-center justify-center p-8 text-center rounded-3xl animate-fade-in border border-brand-dark-border">
+                    <div class="w-28 h-28 bg-brand-dark-panel border-2 border-brand-green text-brand-green-light rounded-full flex items-center justify-center text-6xl mb-8 shadow-[0_0_40px_rgba(43,95,84,0.4)]">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <h2 class="text-4xl font-heading text-white mb-4 tracking-wide">Enrollment Complete</h2>
+                    <p class="text-gray-400 text-lg mb-10 max-w-md font-medium leading-relaxed">Your operative profile and loadout specifications have been registered. Command will dispatch you via Comm Link when your expertise is required.</p>
+                    
+                    <button onclick="location.reload()" class="w-full max-w-xs bg-brand-dark-panel border border-brand-dark-border text-white hover:border-brand-green hover:text-brand-green py-4 px-8 rounded-xl transition-all text-sm font-bold uppercase tracking-widest shadow-lg">
+                        Register Another Asset
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+
+</body>
+</html>
